@@ -35,3 +35,17 @@ t_list *get_dir_entries(const char *name, t_ignore_type ignore_type) {
     closedir(dir);
     return entries;
 }
+
+blkcnt_t count_blocks(t_list *files) {
+    t_list *current = files;
+    blkcnt_t blocks = 0;
+
+    while (current != NULL) {
+        t_fileinfo *fileinfo = current->data;
+
+        blocks += fileinfo->stat.st_blocks;
+        current = current->next;
+    }
+
+    return blocks;
+}
