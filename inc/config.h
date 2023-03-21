@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum {
     FORMAT_SINGLECOLUMN, // -1
     FORMAT_MULTICOLUMN,  // -C
