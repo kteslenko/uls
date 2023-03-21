@@ -2,10 +2,19 @@
 
 #include <dirent.h>
 
+static const char *filename(const char *path) {
+    char *slash = mx_strrchr(path, '/');
+
+    if (slash == NULL) {
+        return path;
+    }
+    return slash + 1;
+}
+
 t_fileinfo *get_fileinfo(const char *name) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
-    fileinfo->name = mx_strdup(name);
+    fileinfo->name = mx_strdup(filename(name));
     stat(name, &fileinfo->stat);
 
     return fileinfo;
@@ -28,7 +37,9 @@ t_list *get_dir_entries(const char *name, t_ignore_type ignore_type) {
 
     while ((entry = readdir(dir)) != NULL) {
         if (!is_ignored(entry->d_name, ignore_type)) {
-            mx_push_back(&entries, get_fileinfo(entry->d_name));
+            char *filename = mx_strjoin_delim(name, entry->d_name, '/');
+            mx_push_back(&entries, get_fileinfo(filename));
+            free(filename);
         }
     }
 
