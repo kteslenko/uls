@@ -86,7 +86,7 @@ t_config *parse_args(int argc, char *argv[]) {
                 write(2, str, 1);
                 write(2, "\n", 1);
                 mx_printerr("usage: uls [-@ACFGRSTacefhlmprtu1] [file ...]\n");
-                break;
+                exit(1);
             }
         }
     }

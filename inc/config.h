@@ -43,3 +43,5 @@ typedef struct {
     bool complete_time_info;  // -T
     bool extended_attributes; // -@
 } t_config;
+
+t_config *parse_args(int argc, char *argv[]);
