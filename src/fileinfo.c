@@ -1,21 +1,37 @@
 #include "fileinfo.h"
 
-#include <dirent.h>
-
-static const char *filename(const char *path) {
+static char *filename(const char *path) {
     char *slash = mx_strrchr(path, '/');
 
     if (slash == NULL) {
-        return path;
+        return mx_strdup(path);
     }
-    return slash + 1;
+    return mx_strdup(slash + 1);
+}
+
+static char *get_user_name(uid_t uid) {
+    struct passwd *passwd = getpwuid(uid);
+    if (passwd == NULL) {
+        return mx_itoa(uid);
+    }
+    return mx_strdup(passwd->pw_name);
+}
+
+static char *get_group_name(gid_t gid) {
+    struct group *group = getgrgid(gid);
+    if (group == NULL) {
+        return mx_itoa(gid);
+    }
+    return mx_strdup(group->gr_name);
 }
 
 t_fileinfo *get_fileinfo(const char *name) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
-    fileinfo->name = mx_strdup(filename(name));
-    stat(name, &fileinfo->stat);
+    lstat(name, &fileinfo->stat);
+    fileinfo->name = filename(name);
+    fileinfo->user = get_user_name(fileinfo->stat.st_uid);
+    fileinfo->group = get_group_name(fileinfo->stat.st_gid);
 
     return fileinfo;
 }

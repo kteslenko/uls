@@ -3,10 +3,15 @@
 #include "config.h"
 #include "libmx.h"
 
+#include <dirent.h>
+#include <grp.h>
+#include <pwd.h>
 #include <sys/stat.h>
 
 typedef struct {
     char *name;
+    char *user;
+    char *group;
     struct stat stat;
 } t_fileinfo;
 
