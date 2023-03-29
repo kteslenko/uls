@@ -13,9 +13,10 @@ typedef struct {
     char *user;
     char *group;
     struct stat stat;
+    struct timespec timespec;
 } t_fileinfo;
 
-t_fileinfo *get_fileinfo(const char *name);
-t_list *get_dir_entries(const char *name, t_ignore_type ignore_type);
+t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config);
+t_list *get_dir_entries(const char *name, t_config *config);
 
 blkcnt_t count_blocks(t_list *files);

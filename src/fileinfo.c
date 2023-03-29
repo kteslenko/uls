@@ -1,14 +1,5 @@
 #include "fileinfo.h"
 
-static char *filename(const char *path) {
-    char *slash = mx_strrchr(path, '/');
-
-    if (slash == NULL) {
-        return mx_strdup(path);
-    }
-    return mx_strdup(slash + 1);
-}
-
 static char *get_user_name(uid_t uid) {
     struct passwd *passwd = getpwuid(uid);
     if (passwd == NULL) {
@@ -25,13 +16,29 @@ static char *get_group_name(gid_t gid) {
     return mx_strdup(group->gr_name);
 }
 
-t_fileinfo *get_fileinfo(const char *name) {
+static struct timespec get_timespec(struct stat *stat, t_time_type time_type) {
+    switch (time_type) {
+    case TIME_MODIFICATION:
+        return stat->st_mtimespec;
+    case TIME_STATUS_CHANGE:
+        return stat->st_ctimespec;
+    case TIME_ACCESS:
+        return stat->st_atimespec;
+    }
+}
+
+t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
-    lstat(name, &fileinfo->stat);
-    fileinfo->name = filename(name);
+    char *filename = mx_strjoin_delim(dir, name, '/');
+    if (lstat(filename, &fileinfo->stat) != 0) {
+        free(fileinfo);
+        return NULL;
+    }
+    fileinfo->name = mx_strdup(name);
     fileinfo->user = get_user_name(fileinfo->stat.st_uid);
     fileinfo->group = get_group_name(fileinfo->stat.st_gid);
+    fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
 
     return fileinfo;
 }
@@ -46,16 +53,14 @@ static bool is_ignored(const char *name, t_ignore_type ignore_type) {
     return false;
 }
 
-t_list *get_dir_entries(const char *name, t_ignore_type ignore_type) {
+t_list *get_dir_entries(const char *name, t_config *config) {
     t_list *entries = NULL;
     DIR *dir = opendir(name);
     struct dirent *entry = NULL;
 
     while ((entry = readdir(dir)) != NULL) {
-        if (!is_ignored(entry->d_name, ignore_type)) {
-            char *filename = mx_strjoin_delim(name, entry->d_name, '/');
-            mx_push_back(&entries, get_fileinfo(filename));
-            free(filename);
+        if (!is_ignored(entry->d_name, config->ignore_type)) {
+            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config));
         }
     }
 
