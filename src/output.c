@@ -1,70 +1,91 @@
 #include "output.h"
 
-static void print_fileinfo(t_fileinfo *fileinfo) {
+static void print_color(mode_t mode) {
+    switch (mode & S_IFMT) {
+    case S_IFBLK:
+        mx_printstr("\033[34;46m");
+        break;
+    case S_IFCHR:
+        mx_printstr("\033[34;43m");
+        break;
+    case S_IFDIR:
+        if (mode & S_IWOTH) {
+            if (mode & S_ISTXT) {
+                mx_printstr("\033[30;42m");
+            } else {
+                mx_printstr("\033[30;43m");
+            }
+        } else {
+            mx_printstr("\033[34m");
+        }
+        break;
+    case S_IFIFO:
+        mx_printstr("\033[33m");
+        break;
+    case S_IFLNK:
+        mx_printstr("\033[35m");
+        break;
+    case S_IFSOCK:
+        mx_printstr("\033[32m");
+        break;
+    default:
+        if (mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+            if (mode & S_ISUID) {
+                mx_printstr("\033[30;41m");
+            } else if (mode & S_ISGID) {
+                mx_printstr("\033[30;46m");
+            } else {
+                mx_printstr("\033[31m");
+            }
+        }
+        break;
+    }
+}
+
+int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
+    if (config->colorize) {
+        print_color(fileinfo->stat.st_mode);
+    }
     mx_printstr(fileinfo->name);
+    if (config->colorize) {
+        mx_printstr("\033[0m");
+    }
+
+    return mx_strlen(fileinfo->name);
 }
 
-static void print_permissions(mode_t mode) {
-    mx_printstr((S_ISDIR(mode)) ? "d" : "-");
-    mx_printstr((mode & S_IRUSR) ? "r" : "-");
-    mx_printstr((mode & S_IWUSR) ? "w" : "-");
-    mx_printstr((mode & S_IXUSR) ? "x" : "-");
-    mx_printstr((mode & S_IRGRP) ? "r" : "-");
-    mx_printstr((mode & S_IWGRP) ? "w" : "-");
-    mx_printstr((mode & S_IXGRP) ? "x" : "-");
-    mx_printstr((mode & S_IROTH) ? "r" : "-");
-    mx_printstr((mode & S_IWOTH) ? "w" : "-");
-    mx_printstr((mode & S_IXOTH) ? "x" : "-");
-}
-
-static void print_time(time_t time) {
-    char *str = ctime(&time);
-    str[16] = '\0';
-    mx_printstr(str + 4);
-}
-
-static void print_fileinfo_long(t_fileinfo *fileinfo) {
-    print_permissions(fileinfo->stat.st_mode);
-    mx_printstr("  ");
-    mx_printint(fileinfo->stat.st_nlink);
-    mx_printstr(" ");
-    mx_printstr(fileinfo->user);
-    mx_printstr("  ");
-    mx_printstr(fileinfo->group);
-    mx_printstr("   ");
-    mx_printint(fileinfo->stat.st_size);
-    mx_printstr(" ");
-    print_time(fileinfo->stat.st_mtimespec.tv_sec);
-    mx_printstr(" ");
-    mx_printstr(fileinfo->name);
-}
-
-static void print_singlecolumn(t_list *fileinfos) {
+static void print_singlecolumn(t_list *fileinfos, t_config *config) {
     while (fileinfos != NULL) {
-        print_fileinfo(fileinfos->data);
+        print_fileinfo(fileinfos->data, config);
         mx_printchar('\n');
         fileinfos = fileinfos->next;
     }
 }
 
-static void print_long(t_list *fileinfos) {
-    mx_printstr("total ");
-    mx_printint(count_blocks(fileinfos));
-    mx_printstr("\n");
+void print_stream(t_list *fileinfos, t_config *config) {
     while (fileinfos != NULL) {
-        print_fileinfo_long(fileinfos->data);
-        mx_printchar('\n');
+        print_fileinfo(fileinfos->data, config);
+        if (fileinfos->next != NULL) {
+            mx_printstr(", ");
+        }
         fileinfos = fileinfos->next;
     }
+    mx_printchar('\n');
 }
 
 void print_fileinfos(t_list *fileinfos, t_config *config) {
     switch (config->format) {
     case FORMAT_SINGLECOLUMN:
-        print_singlecolumn(fileinfos);
+        print_singlecolumn(fileinfos, config);
+        break;
+    case FORMAT_MULTICOLUMN:
+        print_multicolumn(fileinfos, config);
+        break;
+    case FORMAT_STREAM:
+        print_stream(fileinfos, config);
         break;
     case FORMAT_LONG:
-        print_long(fileinfos);
+        print_long(fileinfos, config);
         break;
     default:
         mx_printstr("go away");

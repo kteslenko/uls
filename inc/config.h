@@ -37,6 +37,7 @@ typedef struct {
     bool colorize;            // -G
     bool classify;            // -F
     bool slash;               // -p
+    bool sort_across;         // -x
     bool sort_reverse;        // -r
     bool human_readable;      // -h
     bool access_control_list; // -e

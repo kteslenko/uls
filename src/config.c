@@ -33,6 +33,9 @@ t_config *parse_args(int argc, char *argv[]) {
             case 'p':
                 config->slash = true;
                 break;
+            case 'x':
+                config->sort_across = true;
+                break;
             case 'r':
                 config->sort_reverse = true;
                 break;
@@ -74,6 +77,7 @@ t_config *parse_args(int argc, char *argv[]) {
                 break;
             case 'f':
                 config->sort_type = SORT_NONE;
+                config->ignore_type = IGNORE_NONE;
                 break;
             case 'A':
                 config->ignore_type = IGNORE_DOTS;
@@ -90,5 +94,13 @@ t_config *parse_args(int argc, char *argv[]) {
             }
         }
     }
+
+    if (!isatty(1)) {
+        config->colorize = false;
+    }
+    if (config->sort_type == SORT_NONE) {
+        config->ignore_type = IGNORE_NONE;
+    }
+
     return config;
 }
