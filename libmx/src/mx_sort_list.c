@@ -7,7 +7,7 @@ static void swap_data(t_list *a, t_list *b) {
     b->data = temp;
 }
 
-t_list *mx_sort_list(t_list *list, bool (*cmp)(void *a, void *b)) {
+t_list *mx_sort_list(t_list *list, bool (*cmp)(void *, void *), bool reverse) {
     bool sorted = false;
 
     if (list == NULL || cmp == NULL) {
@@ -17,7 +17,8 @@ t_list *mx_sort_list(t_list *list, bool (*cmp)(void *a, void *b)) {
     while (!sorted) {
         sorted = true;
         for (t_list *i = list; i->next != NULL; i = i->next) {
-            if (cmp(i->data, i->next->data)) {
+            bool cmp_res = cmp(i->data, i->next->data);
+            if ((cmp_res && !reverse) || (!cmp_res && reverse)) {
                 swap_data(i, i->next);
                 sorted = false;
             }
