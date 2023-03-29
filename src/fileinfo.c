@@ -38,6 +38,12 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     fileinfo->name = mx_strdup(name);
     fileinfo->user = get_user_name(fileinfo->stat.st_uid);
     fileinfo->group = get_group_name(fileinfo->stat.st_gid);
+    if (S_ISLNK(fileinfo->stat.st_mode)) {
+        fileinfo->link = malloc(PATH_MAX);
+        readlink(filename, fileinfo->link, PATH_MAX);
+    } else {
+        fileinfo->link = NULL;
+    }
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
 
     return fileinfo;

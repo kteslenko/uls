@@ -7,11 +7,14 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sys/stat.h>
+#include <sys/syslimits.h>
+#include <unistd.h>
 
 typedef struct {
     char *name;
     char *user;
     char *group;
+    char *link;
     struct stat stat;
     struct timespec timespec;
 } t_fileinfo;

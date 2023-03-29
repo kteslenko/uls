@@ -105,6 +105,10 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     print_time(fileinfo->timespec.tv_sec, config->complete_time_info);
     mx_printstr(" ");
     print_fileinfo(fileinfo, config);
+    if (fileinfo->link != NULL) {
+        mx_printstr(" -> ");
+        mx_printstr(fileinfo->link);
+    }
 }
 
 static t_width max_width(t_list *fileinfos) {
