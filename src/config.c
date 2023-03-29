@@ -29,9 +29,11 @@ t_config *parse_args(int argc, char *argv[]) {
                 break;
             case 'F':
                 config->classify = true;
+                config->slash = false;
                 break;
             case 'p':
                 config->slash = true;
+                config->classify = false;
                 break;
             case 'x':
                 config->sort_across = true;

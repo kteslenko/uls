@@ -42,6 +42,32 @@ static void print_color(mode_t mode) {
     }
 }
 
+static int print_classify(mode_t mode) {
+    switch (mode & S_IFMT) {
+    case S_IFDIR:
+        mx_printchar('/');
+        return 1;
+    case S_IFIFO:
+        mx_printchar('|');
+        return 1;
+    case S_IFLNK:
+        mx_printchar('@');
+        return 1;
+    case S_IFSOCK:
+        mx_printchar('=');
+        return 1;
+    case S_IFREG:
+        if (mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+            mx_printchar('*');
+            return 1;
+        }
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
 int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
     if (config->colorize) {
         print_color(fileinfo->stat.st_mode);
@@ -51,7 +77,17 @@ int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
         mx_printstr("\033[0m");
     }
 
-    return mx_strlen(fileinfo->name);
+    int count = mx_strlen(fileinfo->name);
+
+    if (config->classify) {
+        count += print_classify(fileinfo->stat.st_mode);
+    }
+
+    if (config->slash && S_ISDIR(fileinfo->stat.st_mode)) {
+        mx_printchar('/');
+        count++;
+    }
+    return count;
 }
 
 static void print_singlecolumn(t_list *fileinfos, t_config *config) {

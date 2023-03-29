@@ -61,6 +61,9 @@ void print_multicolumn(t_list *fileinfos, t_config *config) {
     }
 
     int width = max_width(fileinfos);
+    if (config->classify || config->slash) {
+        width++;
+    }
     width = (width + tabwidth) & ~(tabwidth - 1);
 
     int count;
