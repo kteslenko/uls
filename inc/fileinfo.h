@@ -6,8 +6,11 @@
 #include <dirent.h>
 #include <grp.h>
 #include <pwd.h>
+#include <sys/acl.h>
 #include <sys/stat.h>
 #include <sys/syslimits.h>
+#include <sys/types.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 typedef struct {
@@ -15,6 +18,7 @@ typedef struct {
     char *user;
     char *group;
     char *link;
+    acl_t acl;
     struct stat stat;
     struct timespec timespec;
 } t_fileinfo;

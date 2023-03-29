@@ -91,9 +91,39 @@ static void print_time(time_t ptime, bool full) {
     }
 }
 
+static void print_acl(acl_t acl) {
+    char *str = acl_to_text(acl, NULL);
+    char **lines = mx_strsplit(str, '\n');
+
+    for (int i = 1; lines[i] != NULL; i++) {
+        mx_printstr(" ");
+        mx_printint(i - 1);
+        mx_printstr(": ");
+        char **parts = mx_strsplit(lines[i], ':');
+        mx_printstr(parts[0]);
+        mx_printstr(":");
+        mx_printstr(parts[2]);
+        mx_printstr(" ");
+        mx_printstr(parts[4]);
+        mx_printstr(" ");
+        mx_printstr(parts[5]);
+        mx_printstr("\n");
+        mx_del_strarr(&parts);
+    }
+    mx_del_strarr(&lines);
+    free(str);
+}
+
 static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *config) {
     print_permissions(fileinfo->stat.st_mode);
-    mx_printstr("  ");
+
+    if (fileinfo->acl != NULL) {
+        mx_printchar('+');
+    } else {
+        mx_printchar(' ');
+    }
+
+    mx_printstr(" ");
     printint_aligned(fileinfo->stat.st_nlink, width->links);
     mx_printstr(" ");
     print_aligned(fileinfo->user, width->user, false);
@@ -108,6 +138,11 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     if (fileinfo->link != NULL) {
         mx_printstr(" -> ");
         mx_printstr(fileinfo->link);
+    }
+    mx_printstr("\n");
+
+    if (fileinfo->acl != NULL) {
+        print_acl(fileinfo->acl);
     }
 }
 
@@ -152,7 +187,6 @@ void print_long(t_list *fileinfos, t_config *config) {
 
     while (fileinfos != NULL) {
         print_fileinfo_long(fileinfos->data, &width, config);
-        mx_printchar('\n');
         fileinfos = fileinfos->next;
     }
 }

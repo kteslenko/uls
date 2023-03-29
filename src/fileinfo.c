@@ -45,6 +45,7 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
         fileinfo->link = NULL;
     }
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
+    fileinfo->acl = acl_get_file(filename, ACL_TYPE_EXTENDED);
 
     return fileinfo;
 }
