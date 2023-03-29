@@ -42,28 +42,35 @@ static void print_color(mode_t mode) {
     }
 }
 
-static int print_classify(mode_t mode) {
+static int print_classifier(mode_t mode, bool slash_only) {
+    char classifier = '\0';
+
     switch (mode & S_IFMT) {
     case S_IFDIR:
-        mx_printchar('/');
-        return 1;
+        classifier = '/';
+        break;
     case S_IFIFO:
-        mx_printchar('|');
-        return 1;
+        classifier = '|';
+        break;
     case S_IFLNK:
-        mx_printchar('@');
-        return 1;
+        classifier = '@';
+        break;
     case S_IFSOCK:
-        mx_printchar('=');
-        return 1;
+        classifier = '=';
+        break;
     case S_IFREG:
         if (mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-            mx_printchar('*');
-            return 1;
+            classifier = '*';
         }
         break;
-    default:
-        break;
+    }
+
+    if (classifier != '\0') {
+        if (slash_only && classifier != '/') {
+            return 0;
+        }
+        mx_printchar(classifier);
+        return 1;
     }
     return 0;
 }
@@ -79,14 +86,10 @@ int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
 
     int count = mx_strlen(fileinfo->name);
 
-    if (config->classify) {
-        count += print_classify(fileinfo->stat.st_mode);
+    if (config->classify || config->slash) {
+        count += print_classifier(fileinfo->stat.st_mode, config->slash);
     }
 
-    if (config->slash && S_ISDIR(fileinfo->stat.st_mode)) {
-        mx_printchar('/');
-        count++;
-    }
     return count;
 }
 
