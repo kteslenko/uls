@@ -35,9 +35,6 @@ t_config *parse_args(int argc, char *argv[]) {
                 config->slash = true;
                 config->classify = false;
                 break;
-            case 'x':
-                config->sort_across = true;
-                break;
             case 'r':
                 config->sort_reverse = true;
                 break;
@@ -52,6 +49,21 @@ t_config *parse_args(int argc, char *argv[]) {
                 break;
             case '@':
                 config->extended_attributes = true;
+                break;
+            case 'g':
+                config->omit_owner = true;
+                break;
+            case 'o':
+                config->omit_group = true;
+                break;
+            case 'x':
+                config->sort_across = true;
+                break;
+            case 'n':
+                config->display_numeric = true;
+                break;
+            case 'q':
+                config->non_printable = true;
                 break;
             case '1':
                 config->format = FORMAT_SINGLECOLUMN;
@@ -70,6 +82,9 @@ t_config *parse_args(int argc, char *argv[]) {
                 break;
             case 'u':
                 config->time_type = TIME_ACCESS;
+                break;
+            case 'U':
+                config->time_type = TIME_CREATION;
                 break;
             case 't':
                 config->sort_type = SORT_TIME;

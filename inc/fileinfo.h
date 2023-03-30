@@ -14,10 +14,12 @@
 #include <unistd.h>
 
 typedef struct {
+    char *path;
     char *name;
     char *user;
-    char *group;
     char *link;
+    char *group;
+    char **xattr_keys;
     acl_t acl;
     struct stat stat;
     struct timespec timespec;

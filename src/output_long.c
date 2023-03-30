@@ -91,6 +91,17 @@ static void print_time(time_t ptime, bool full) {
     }
 }
 
+static void print_xattrs(t_fileinfo *fileinfo) {
+    for (char **ptr = fileinfo->xattr_keys; *ptr != NULL; ptr++) {
+        mx_printstr("\t");
+        mx_printstr(*ptr);
+        mx_printstr("\t   ");
+        ssize_t value_size = getxattr(fileinfo->path, *ptr, NULL, 0, 0, XATTR_NOFOLLOW);
+        mx_printint(value_size);
+        mx_printstr("\n");
+    }
+}
+
 static void print_acl(acl_t acl) {
     char *str = acl_to_text(acl, NULL);
     char **lines = mx_strsplit(str, '\n');
@@ -117,7 +128,9 @@ static void print_acl(acl_t acl) {
 static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *config) {
     print_permissions(fileinfo->stat.st_mode);
 
-    if (fileinfo->acl != NULL) {
+    if (fileinfo->xattr_keys != NULL) {
+        mx_printchar('@');
+    } else if (fileinfo->acl != NULL) {
         mx_printchar('+');
     } else {
         mx_printchar(' ');
@@ -126,10 +139,20 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     mx_printstr(" ");
     printint_aligned(fileinfo->stat.st_nlink, width->links);
     mx_printstr(" ");
-    print_aligned(fileinfo->user, width->user, false);
-    mx_printstr("  ");
-    print_aligned(fileinfo->group, width->group, false);
-    mx_printstr("  ");
+
+    if (!config->omit_owner) {
+        print_aligned(fileinfo->user, width->user, false);
+        mx_printstr("  ");
+    }
+    if (!config->omit_group) {
+        print_aligned(fileinfo->group, width->group, false);
+        mx_printstr("  ");
+    }
+
+    if (config->omit_owner && config->omit_group) {
+        mx_printstr("  ");
+    }
+
     printint_aligned(fileinfo->stat.st_size, width->size);
     mx_printstr(" ");
     print_time(fileinfo->timespec.tv_sec, config->complete_time_info);
@@ -141,7 +164,11 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     }
     mx_printstr("\n");
 
-    if (fileinfo->acl != NULL) {
+    if (config->extended_attributes && fileinfo->xattr_keys != NULL) {
+        print_xattrs(fileinfo);
+    }
+
+    if (config->access_control_list && fileinfo->acl != NULL) {
         print_acl(fileinfo->acl);
     }
 }
@@ -180,10 +207,6 @@ static t_width max_width(t_list *fileinfos) {
 
 void print_long(t_list *fileinfos, t_config *config) {
     t_width width = max_width(fileinfos);
-
-    mx_printstr("total ");
-    mx_printint(count_blocks(fileinfos));
-    mx_printstr("\n");
 
     while (fileinfos != NULL) {
         print_fileinfo_long(fileinfos->data, &width, config);

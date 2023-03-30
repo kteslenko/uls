@@ -13,6 +13,7 @@ typedef enum {
     TIME_MODIFICATION,  // default
     TIME_STATUS_CHANGE, // -c
     TIME_ACCESS,        // -u
+    TIME_CREATION,      // -U
 } t_time_type;
 
 typedef enum {
@@ -37,12 +38,16 @@ typedef struct {
     bool colorize;            // -G
     bool classify;            // -F
     bool slash;               // -p
-    bool sort_across;         // -x
     bool sort_reverse;        // -r
     bool human_readable;      // -h
     bool access_control_list; // -e
     bool complete_time_info;  // -T
     bool extended_attributes; // -@
+    bool omit_owner;          // -g
+    bool omit_group;          // -o
+    bool sort_across;         // -x
+    bool display_numeric;     // -n
+    bool non_printable;       // -q
 } t_config;
 
 t_config *parse_args(int argc, char *argv[]);

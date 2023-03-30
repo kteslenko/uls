@@ -75,11 +75,33 @@ static int print_classifier(mode_t mode, bool slash_only) {
     return 0;
 }
 
+static char *substitute_non_printable(const char *name) {
+    char *copy = mx_strdup(name);
+
+    for (int i = 0; copy[i] != '\0'; i++) {
+        if (copy[i] >= 0 && copy[i] <= 31) {
+            copy[i] = '?';
+        }
+    }
+
+    return copy;
+}
+
+static void print_name(const char *name, bool non_printable) {
+    if (non_printable) {
+        char *str = substitute_non_printable(name);
+        mx_printstr(str);
+        free(str);
+    } else {
+        mx_printstr(name);
+    }
+}
+
 int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
     if (config->colorize) {
         print_color(fileinfo->stat.st_mode);
     }
-    mx_printstr(fileinfo->name);
+    print_name(fileinfo->name, config->non_printable);
     if (config->colorize) {
         mx_printstr("\033[0m");
     }

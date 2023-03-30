@@ -1,16 +1,16 @@
 #include "fileinfo.h"
 
-static char *get_user_name(uid_t uid) {
+static char *get_user_name(uid_t uid, bool numeric) {
     struct passwd *passwd = getpwuid(uid);
-    if (passwd == NULL) {
+    if (passwd == NULL || numeric) {
         return mx_itoa(uid);
     }
     return mx_strdup(passwd->pw_name);
 }
 
-static char *get_group_name(gid_t gid) {
+static char *get_group_name(gid_t gid, bool numeric) {
     struct group *group = getgrgid(gid);
-    if (group == NULL) {
+    if (group == NULL || numeric) {
         return mx_itoa(gid);
     }
     return mx_strdup(group->gr_name);
@@ -24,28 +24,47 @@ static struct timespec get_timespec(struct stat *stat, t_time_type time_type) {
         return stat->st_ctimespec;
     case TIME_ACCESS:
         return stat->st_atimespec;
+    case TIME_CREATION:
+        return stat->st_birthtimespec;
     }
+}
+
+static char **get_xattr_keys(const char *filename) {
+    char buffer[1024];
+    ssize_t count = listxattr(filename, buffer, sizeof(buffer), XATTR_NOFOLLOW);
+
+    for (int i = 0; i < count - 1; i++) {
+        if (buffer[i] == '\0') {
+            buffer[i] = ':';
+        }
+    }
+
+    if (count != 0) {
+        return mx_strsplit(buffer, ':');
+    }
+    return NULL;
 }
 
 t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
-    char *filename = mx_strjoin_delim(dir, name, '/');
-    if (lstat(filename, &fileinfo->stat) != 0) {
+    fileinfo->path = mx_strjoin_delim(dir, name, '/');
+    if (lstat(fileinfo->path, &fileinfo->stat) != 0) {
         free(fileinfo);
         return NULL;
     }
     fileinfo->name = mx_strdup(name);
-    fileinfo->user = get_user_name(fileinfo->stat.st_uid);
-    fileinfo->group = get_group_name(fileinfo->stat.st_gid);
+    fileinfo->user = get_user_name(fileinfo->stat.st_uid, config->display_numeric);
+    fileinfo->group = get_group_name(fileinfo->stat.st_gid, config->display_numeric);
     if (S_ISLNK(fileinfo->stat.st_mode)) {
         fileinfo->link = malloc(PATH_MAX);
-        readlink(filename, fileinfo->link, PATH_MAX);
+        readlink(fileinfo->path, fileinfo->link, PATH_MAX);
     } else {
         fileinfo->link = NULL;
     }
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
-    fileinfo->acl = acl_get_file(filename, ACL_TYPE_EXTENDED);
+    fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
+    fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
 
     return fileinfo;
 }
