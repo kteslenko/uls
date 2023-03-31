@@ -48,6 +48,7 @@ typedef struct {
     bool sort_across;         // -x
     bool display_numeric;     // -n
     bool non_printable;       // -q
+    bool follow_links;        // -H
 } t_config;
 
 t_config *parse_args(int argc, char *argv[]);

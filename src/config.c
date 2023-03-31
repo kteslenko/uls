@@ -65,6 +65,9 @@ t_config *parse_args(int argc, char *argv[]) {
             case 'q':
                 config->non_printable = true;
                 break;
+            case 'H':
+                config->follow_links = true;
+                break;
             case '1':
                 config->format = FORMAT_SINGLECOLUMN;
                 break;
@@ -114,6 +117,10 @@ t_config *parse_args(int argc, char *argv[]) {
 
     if (!isatty(1)) {
         config->colorize = false;
+    }
+    if (!config->follow_links) {
+        config->follow_links =
+            config->format != FORMAT_LONG && !config->colorize && !config->classify;
     }
     if (config->sort_type == SORT_NONE) {
         config->ignore_type = IGNORE_NONE;

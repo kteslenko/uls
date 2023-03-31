@@ -45,13 +45,13 @@ static char **get_xattr_keys(const char *filename) {
     return NULL;
 }
 
-t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config, bool follow_link) {
+t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
     fileinfo->path = mx_strjoin_delim(dir, name, '/');
 
     int err;
-    if (follow_link) {
+    if (dir == NULL && config->follow_links) {
         err = stat(fileinfo->path, &fileinfo->stat);
     } else {
         err = lstat(fileinfo->path, &fileinfo->stat);
@@ -95,7 +95,7 @@ t_list *get_dir_entries(const char *name, t_config *config) {
 
     while ((entry = readdir(dir)) != NULL) {
         if (!is_ignored(entry->d_name, config->ignore_type)) {
-            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config, false));
+            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config));
         }
     }
 
