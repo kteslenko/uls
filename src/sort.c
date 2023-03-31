@@ -20,6 +20,9 @@ static bool compare_by_time(void *data1, void *data2) {
     t_fileinfo *fileinfo1 = data1;
     t_fileinfo *fileinfo2 = data2;
     if (fileinfo1->timespec.tv_sec == fileinfo2->timespec.tv_sec) {
+        if (fileinfo1->timespec.tv_nsec == fileinfo2->timespec.tv_nsec) {
+            return mx_strcmp(fileinfo1->name, fileinfo2->name) > 0;
+        }
         return fileinfo1->timespec.tv_nsec < fileinfo2->timespec.tv_nsec;
     }
     return fileinfo1->timespec.tv_sec < fileinfo2->timespec.tv_sec;
