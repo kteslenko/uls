@@ -69,13 +69,14 @@ static void ls(t_list *files, t_config *config) {
     t_list *regular = NULL;
     t_list *dirs = NULL;
     bool print_names = mx_list_size(files) > 1;
+    bool follow_link = config->format != FORMAT_LONG && !config->colorize && !config->classify;
 
     sort_filenames(files, config->sort_type);
     while (files != NULL) {
         char *file = files->data;
         files = files->next;
 
-        t_fileinfo *fileinfo = get_fileinfo(NULL, file, config);
+        t_fileinfo *fileinfo = get_fileinfo(NULL, file, config, follow_link);
         if (fileinfo == NULL) {
             print_error(file);
             continue;

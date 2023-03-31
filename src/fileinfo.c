@@ -45,14 +45,23 @@ static char **get_xattr_keys(const char *filename) {
     return NULL;
 }
 
-t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
+t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config, bool follow_link) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
     fileinfo->path = mx_strjoin_delim(dir, name, '/');
-    if (lstat(fileinfo->path, &fileinfo->stat) != 0) {
+
+    int err;
+    if (follow_link) {
+        err = stat(fileinfo->path, &fileinfo->stat);
+    } else {
+        err = lstat(fileinfo->path, &fileinfo->stat);
+    }
+
+    if (err != 0) {
         free(fileinfo);
         return NULL;
     }
+
     fileinfo->name = mx_strdup(name);
     fileinfo->user = get_user_name(fileinfo->stat.st_uid, config->display_numeric);
     fileinfo->group = get_group_name(fileinfo->stat.st_gid, config->display_numeric);
@@ -86,7 +95,7 @@ t_list *get_dir_entries(const char *name, t_config *config) {
 
     while ((entry = readdir(dir)) != NULL) {
         if (!is_ignored(entry->d_name, config->ignore_type)) {
-            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config));
+            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config, false));
         }
     }
 
