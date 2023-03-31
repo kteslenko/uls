@@ -125,6 +125,40 @@ static void print_acl(acl_t acl) {
     free(str);
 }
 
+static double round(double number) {
+    return (long)(number + 0.5);
+}
+
+static void print_size(off_t size) {
+    const char *suffixes[] = {"B", "K", "M", "G", "T", "P"};
+    double size_f = size;
+    int suffix = 0;
+
+    while (size_f >= 1000) {
+        size_f /= 1024;
+        suffix++;
+    }
+
+    size_f = round(size_f * 10) / 10;
+
+    char buf[5] = {'\0'};
+    if (size_f >= 10 || suffix == 0) {
+        char *str = mx_itoa(round(size_f));
+        mx_strcat(buf, str);
+        free(str);
+    } else {
+        char *str = mx_itoa(size_f);
+        mx_strcat(buf, str);
+        free(str);
+        mx_strcat(buf, ".");
+        str = mx_itoa((int)(size_f * 10) % 10);
+        mx_strcat(buf, str);
+        free(str);
+    }
+    mx_strcat(buf, suffixes[suffix]);
+    print_aligned(buf, 5, true);
+}
+
 static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *config) {
     print_permissions(fileinfo->stat.st_mode);
 
@@ -153,7 +187,12 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
         mx_printstr("  ");
     }
 
-    printint_aligned(fileinfo->stat.st_size, width->size);
+    if (config->human_readable) {
+        print_size(fileinfo->stat.st_size);
+    } else {
+        printint_aligned(fileinfo->stat.st_size, width->size);
+    }
+
     mx_printstr(" ");
     print_time(fileinfo->timespec.tv_sec, config->complete_time_info);
     mx_printstr(" ");
