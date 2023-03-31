@@ -26,6 +26,6 @@ typedef struct {
 } t_fileinfo;
 
 t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config);
-t_list *get_dir_entries(const char *name, t_config *config);
+bool get_dir_entries(t_list **entries, const char *name, t_config *config);
 
 blkcnt_t count_blocks(t_list *files);

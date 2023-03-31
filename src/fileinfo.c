@@ -30,7 +30,7 @@ static struct timespec get_timespec(struct stat *stat, t_time_type time_type) {
 }
 
 static char **get_xattr_keys(const char *filename) {
-    char buffer[1024];
+    char buffer[1024] = {'\0'};
     ssize_t count = listxattr(filename, buffer, sizeof(buffer), XATTR_NOFOLLOW);
 
     for (int i = 0; i < count - 1; i++) {
@@ -39,7 +39,7 @@ static char **get_xattr_keys(const char *filename) {
         }
     }
 
-    if (count != 0) {
+    if (count > 0) {
         return mx_strsplit(buffer, ':');
     }
     return NULL;
@@ -72,10 +72,7 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
         fileinfo->link = NULL;
         fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
     }
-    if (S_ISREG(fileinfo->stat.st_mode) || S_ISDIR(fileinfo->stat.st_mode)
-        || S_ISLNK(fileinfo->stat.st_mode)) {
-        fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
-    }
+    fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
 
     return fileinfo;
@@ -91,19 +88,22 @@ static bool is_ignored(const char *name, t_ignore_type ignore_type) {
     return false;
 }
 
-t_list *get_dir_entries(const char *name, t_config *config) {
-    t_list *entries = NULL;
+bool get_dir_entries(t_list **entries, const char *name, t_config *config) {
     DIR *dir = opendir(name);
     struct dirent *entry = NULL;
 
+    if (dir == NULL) {
+        return false;
+    }
+
     while ((entry = readdir(dir)) != NULL) {
         if (!is_ignored(entry->d_name, config->ignore_type)) {
-            mx_push_back(&entries, get_fileinfo(name, entry->d_name, config));
+            mx_push_back(entries, get_fileinfo(name, entry->d_name, config));
         }
     }
 
     closedir(dir);
-    return entries;
+    return true;
 }
 
 blkcnt_t count_blocks(t_list *files) {

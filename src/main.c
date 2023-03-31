@@ -37,22 +37,30 @@ static void list_regular(t_list *regular, t_config *config) {
     }
 }
 
-static void list_dirs(t_list *dirs, t_config *config, bool print_names) {
+static bool list_dirs(t_list *dirs, t_config *config, bool print_names) {
     sort_fileinfos(dirs, config->sort_type, config->sort_reverse);
 
     while (dirs != NULL) {
         t_fileinfo *fileinfo = dirs->data;
-        t_list *fileinfos = get_dir_entries(fileinfo->name, config);
+        t_list *fileinfos = NULL;
+        bool status;
 
         if (print_names) {
             mx_printstr(fileinfo->name);
             mx_printstr(":\n");
         }
 
+        status = get_dir_entries(&fileinfos, fileinfo->name, config);
+
         if (config->format == FORMAT_LONG) {
             mx_printstr("total ");
             mx_printint(count_blocks(fileinfos));
             mx_printstr("\n");
+        }
+
+        if (!status) {
+            print_error(fileinfo->name);
+            return false;
         }
 
         sort_fileinfos(fileinfos, config->sort_type, config->sort_reverse);
@@ -63,12 +71,15 @@ static void list_dirs(t_list *dirs, t_config *config, bool print_names) {
         }
         dirs = dirs->next;
     }
+
+    return true;
 }
 
-static void ls(t_list *files, t_config *config) {
+static int ls(t_list *files, t_config *config) {
     t_list *regular = NULL;
     t_list *dirs = NULL;
     bool print_names = mx_list_size(files) > 1;
+    int status = 0;
 
     sort_filenames(files, config->sort_type);
     while (files != NULL) {
@@ -78,6 +89,7 @@ static void ls(t_list *files, t_config *config) {
         t_fileinfo *fileinfo = get_fileinfo(NULL, file, config);
         if (fileinfo == NULL) {
             print_error(file);
+            status = 1;
             continue;
         }
 
@@ -92,12 +104,15 @@ static void ls(t_list *files, t_config *config) {
     if (regular != NULL && dirs != NULL) {
         mx_printstr("\n");
     }
-    list_dirs(dirs, config, print_names);
+    if (!list_dirs(dirs, config, print_names)) {
+        status = 1;
+    }
+    return status;
 }
 
 int main(int argc, char *argv[]) {
     t_list *files = get_files_list(argc, argv);
     t_config *config = parse_args(argc, argv);
 
-    ls(files, config);
+    return ls(files, config);
 }

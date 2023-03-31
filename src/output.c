@@ -149,7 +149,6 @@ void print_fileinfos(t_list *fileinfos, t_config *config) {
         print_long(fileinfos, config);
         break;
     default:
-        mx_printstr("go away");
         break;
     }
 }

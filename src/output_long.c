@@ -30,13 +30,25 @@ static void print_permissions(mode_t mode) {
     print_filetype(mode);
     mx_printstr((mode & S_IRUSR) ? "r" : "-");
     mx_printstr((mode & S_IWUSR) ? "w" : "-");
-    mx_printstr((mode & S_IXUSR) ? "x" : "-");
+    if (mode & S_IXUSR) {
+        mx_printstr((mode & S_ISUID) ? "s" : "x");
+    } else {
+        mx_printstr((mode & S_ISUID) ? "S" : "-");
+    }
     mx_printstr((mode & S_IRGRP) ? "r" : "-");
     mx_printstr((mode & S_IWGRP) ? "w" : "-");
-    mx_printstr((mode & S_IXGRP) ? "x" : "-");
+    if (mode & S_IXGRP) {
+        mx_printstr((mode & S_ISGID) ? "s" : "x");
+    } else {
+        mx_printstr((mode & S_ISGID) ? "S" : "-");
+    }
     mx_printstr((mode & S_IROTH) ? "r" : "-");
     mx_printstr((mode & S_IWOTH) ? "w" : "-");
-    mx_printstr((mode & S_IXOTH) ? "x" : "-");
+    if (mode & S_IXOTH) {
+        mx_printstr((mode & S_ISTXT) ? "t" : "x");
+    } else {
+        mx_printstr((mode & S_ISTXT) ? "T" : "-");
+    }
 }
 
 static void print_aligned(char *string, int width, bool align_right) {
