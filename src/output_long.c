@@ -91,45 +91,11 @@ static void print_time(time_t ptime, bool full) {
     }
 }
 
-static void print_xattrs(t_fileinfo *fileinfo) {
-    for (char **ptr = fileinfo->xattr_keys; *ptr != NULL; ptr++) {
-        mx_printstr("\t");
-        mx_printstr(*ptr);
-        mx_printstr("\t   ");
-        ssize_t value_size = getxattr(fileinfo->path, *ptr, NULL, 0, 0, XATTR_NOFOLLOW);
-        mx_printint(value_size);
-        mx_printstr(" \n");
-    }
-}
-
-static void print_acl(acl_t acl) {
-    char *str = acl_to_text(acl, NULL);
-    char **lines = mx_strsplit(str, '\n');
-
-    for (int i = 1; lines[i] != NULL; i++) {
-        mx_printstr(" ");
-        mx_printint(i - 1);
-        mx_printstr(": ");
-        char **parts = mx_strsplit(lines[i], ':');
-        mx_printstr(parts[0]);
-        mx_printstr(":");
-        mx_printstr(parts[2]);
-        mx_printstr(" ");
-        mx_printstr(parts[4]);
-        mx_printstr(" ");
-        mx_printstr(parts[5]);
-        mx_printstr("\n");
-        mx_del_strarr(&parts);
-    }
-    mx_del_strarr(&lines);
-    free(str);
-}
-
 static double round(double number) {
     return (long)(number + 0.5);
 }
 
-static void print_size(off_t size) {
+static void print_size(off_t size, int width) {
     const char *suffixes[] = {"B", "K", "M", "G", "T", "P"};
     double size_f = size;
     int suffix = 0;
@@ -156,7 +122,45 @@ static void print_size(off_t size) {
         free(str);
     }
     mx_strcat(buf, suffixes[suffix]);
-    print_aligned(buf, 5, true);
+    print_aligned(buf, width, true);
+}
+
+static void print_xattrs(t_fileinfo *fileinfo, bool human_readable) {
+    for (char **ptr = fileinfo->xattr_keys; *ptr != NULL; ptr++) {
+        mx_printstr("\t");
+        mx_printstr(*ptr);
+        mx_printstr("\t");
+        ssize_t value_size = getxattr(fileinfo->path, *ptr, NULL, 0, 0, XATTR_NOFOLLOW);
+        if (human_readable) {
+            print_size(value_size, 5);
+        } else {
+            printint_aligned(value_size, 4);
+        }
+        mx_printstr(" \n");
+    }
+}
+
+static void print_acl(acl_t acl) {
+    char *str = acl_to_text(acl, NULL);
+    char **lines = mx_strsplit(str, '\n');
+
+    for (int i = 1; lines[i] != NULL; i++) {
+        mx_printstr(" ");
+        mx_printint(i - 1);
+        mx_printstr(": ");
+        char **parts = mx_strsplit(lines[i], ':');
+        mx_printstr(parts[0]);
+        mx_printstr(":");
+        mx_printstr(parts[2]);
+        mx_printstr(" ");
+        mx_printstr(parts[4]);
+        mx_printstr(" ");
+        mx_printstr(parts[5]);
+        mx_printstr("\n");
+        mx_del_strarr(&parts);
+    }
+    mx_del_strarr(&lines);
+    free(str);
 }
 
 static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *config) {
@@ -187,8 +191,19 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
         mx_printstr("  ");
     }
 
-    if (config->human_readable) {
-        print_size(fileinfo->stat.st_size);
+    if (S_ISCHR(fileinfo->stat.st_mode) || S_ISBLK(fileinfo->stat.st_mode)) {
+        char *hex = mx_nbr_to_hex(fileinfo->stat.st_rdev);
+        char *str;
+        if (fileinfo->stat.st_rdev == 0) {
+            str = mx_strdup(hex);
+        } else {
+            str = mx_strjoin("0x", hex);
+        }
+        print_aligned(str, width->size, true);
+        free(str);
+        free(hex);
+    } else if (config->human_readable) {
+        print_size(fileinfo->stat.st_size, width->size);
     } else {
         printint_aligned(fileinfo->stat.st_size, width->size);
     }
@@ -204,7 +219,7 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     mx_printstr("\n");
 
     if (config->extended_attributes && fileinfo->xattr_keys != NULL) {
-        print_xattrs(fileinfo);
+        print_xattrs(fileinfo, config->human_readable);
     }
 
     if (config->access_control_list && fileinfo->acl != NULL) {
@@ -212,7 +227,7 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     }
 }
 
-static t_width max_width(t_list *fileinfos) {
+static t_width max_width(t_list *fileinfos, t_config *config) {
     t_width width = {.links = 0, .user = 0, .group = 0, .size = 0};
 
     while (fileinfos != NULL) {
@@ -232,11 +247,19 @@ static t_width max_width(t_list *fileinfos) {
             width.group = mx_strlen(fileinfo->group);
         }
 
-        char *wsize = mx_itoa(fileinfo->stat.st_size);
-        if (width.size < mx_strlen(wsize)) {
-            width.size = mx_strlen(wsize);
+        int size_len = 5;
+        if (S_ISCHR(fileinfo->stat.st_mode) || S_ISBLK(fileinfo->stat.st_mode)) {
+            char *wsize = mx_nbr_to_hex(fileinfo->stat.st_rdev);
+            size_len = mx_strlen(wsize) + 2;
+            free(wsize);
+        } else if (!config->human_readable) {
+            char *wsize = mx_itoa(fileinfo->stat.st_size);
+            size_len = mx_strlen(wsize);
+            free(wsize);
         }
-        free(wsize);
+        if (width.size < size_len) {
+            width.size = size_len;
+        }
 
         fileinfos = fileinfos->next;
     }
@@ -245,7 +268,7 @@ static t_width max_width(t_list *fileinfos) {
 }
 
 void print_long(t_list *fileinfos, t_config *config) {
-    t_width width = max_width(fileinfos);
+    t_width width = max_width(fileinfos, config);
 
     while (fileinfos != NULL) {
         print_fileinfo_long(fileinfos->data, &width, config);

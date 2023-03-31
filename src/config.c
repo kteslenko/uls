@@ -106,10 +106,10 @@ t_config *parse_args(int argc, char *argv[]) {
                 config->ignore_type = IGNORE_NONE;
                 break;
             default:
-                mx_printerr("uls: invalid option -- ");
+                mx_printerr("uls: illegal option -- ");
                 write(2, str, 1);
                 write(2, "\n", 1);
-                mx_printerr("usage: uls [-@ACFGRSTacefhlmprtu1] [file ...]\n");
+                mx_printerr("usage: uls [-@ACFGHRSTUacefghlmnopqrtux1] [file ...]\n");
                 exit(1);
             }
         }
