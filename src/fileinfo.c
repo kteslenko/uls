@@ -70,10 +70,10 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
         readlink(fileinfo->path, fileinfo->link, PATH_MAX);
     } else {
         fileinfo->link = NULL;
+        fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
+        fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
     }
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
-    fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
-    fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
 
     return fileinfo;
 }

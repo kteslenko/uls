@@ -98,7 +98,7 @@ static void print_xattrs(t_fileinfo *fileinfo) {
         mx_printstr("\t   ");
         ssize_t value_size = getxattr(fileinfo->path, *ptr, NULL, 0, 0, XATTR_NOFOLLOW);
         mx_printint(value_size);
-        mx_printstr("\n");
+        mx_printstr(" \n");
     }
 }
 
