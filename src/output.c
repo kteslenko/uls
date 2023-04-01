@@ -115,7 +115,7 @@ int print_fileinfo(t_fileinfo *fileinfo, t_config *config) {
     return count;
 }
 
-static void print_singlecolumn(t_list *fileinfos, t_config *config) {
+void print_singlecolumn(t_list *fileinfos, t_config *config) {
     while (fileinfos != NULL) {
         print_fileinfo(fileinfos->data, config);
         mx_printchar('\n');

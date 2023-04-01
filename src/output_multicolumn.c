@@ -66,10 +66,14 @@ void print_multicolumn(t_list *fileinfos, t_config *config) {
     }
     width = (width + tabwidth) & ~(tabwidth - 1);
 
+    int num_cols = get_termwidth() / width;
+    if (num_cols <= 1) {
+        print_singlecolumn(fileinfos, config);
+        return;
+    }
+
     int count;
     t_fileinfo **array = list_to_array(fileinfos, &count);
-
-    int num_cols = get_termwidth() / width;
     int num_rows = (count + num_cols - 1) / num_cols;
 
     int idx = 0;

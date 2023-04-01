@@ -13,6 +13,7 @@ typedef struct {
 } t_width;
 
 int print_fileinfo(t_fileinfo *fileinfo, t_config *config);
+void print_singlecolumn(t_list *fileinfos, t_config *config);
 void print_multicolumn(t_list *fileinfos, t_config *config);
 void print_long(t_list *fileinfos, t_config *config);
 void print_fileinfos(t_list *fileinfos, t_config *config);
