@@ -49,48 +49,71 @@ static void list_regular(t_list *regular, t_config *config) {
     }
 }
 
-static bool list_dirs(t_list *dirs, t_config *config, bool print_names) {
-    bool ret = true;
+static bool list_dirs(t_list *dirs, t_config *config, bool print_names);
 
-    sort_fileinfos(dirs, config->sort_type, config->sort_reverse);
+static bool list_dir(t_fileinfo *fileinfo, t_config *config, bool print_name) {
+    if (print_name) {
+        mx_printstr(fileinfo->name);
+        mx_printstr(":\n");
+    }
 
-    while (dirs != NULL) {
-        t_fileinfo *fileinfo = dirs->data;
-        t_list *fileinfos = NULL;
-        bool status;
+    t_list *fileinfos = NULL;
+    bool status = get_dir_entries(&fileinfos, fileinfo->path, config);
 
-        dirs = dirs->next;
+    if (config->format == FORMAT_LONG) {
+        mx_printstr("total ");
+        mx_printint(count_blocks(fileinfos));
+        mx_printchar('\n');
+    }
 
-        if (print_names) {
-            mx_printstr(fileinfo->name);
-            mx_printstr(":\n");
-        }
+    if (!status) {
+        print_error(fileinfo->name);
+        return false;
+    }
 
-        status = get_dir_entries(&fileinfos, fileinfo->name, config);
+    sort_fileinfos(fileinfos, config->sort_type, config->sort_reverse);
+    print_fileinfos(fileinfos, config);
 
-        if (config->format == FORMAT_LONG) {
-            mx_printstr("total ");
-            mx_printint(count_blocks(fileinfos));
-            mx_printchar('\n');
-        }
+    if (config->recursive) {
+        t_list *dirs = NULL;
 
-        if (!status) {
-            print_error(fileinfo->name);
-            if (dirs != NULL) {
-                mx_printchar('\n');
+        while (fileinfos != NULL) {
+            t_fileinfo *entry = fileinfos->data;
+
+            if (S_ISDIR(entry->stat.st_mode)) {
+                free(entry->name);
+                entry->name = mx_strdup(entry->path);
+                mx_push_back(&dirs, entry);
             }
-            ret = false;
-            continue;
+            fileinfos = fileinfos->next;
         }
-
-        sort_fileinfos(fileinfos, config->sort_type, config->sort_reverse);
-        print_fileinfos(fileinfos, config);
-
-        free_fileinfos(fileinfos);
 
         if (dirs != NULL) {
             mx_printchar('\n');
         }
+        list_dirs(dirs, config, true);
+        mx_clear_list(&dirs);
+    }
+
+    free_fileinfos(fileinfos);
+    return true;
+}
+
+static bool list_dirs(t_list *dirs, t_config *config, bool print_names) {
+    bool ret = true;
+
+    sort_fileinfos(dirs, config->sort_type, config->sort_reverse);
+    while (dirs != NULL) {
+        t_fileinfo *fileinfo = dirs->data;
+
+        if (!list_dir(fileinfo, config, print_names)) {
+            ret = false;
+        }
+
+        if (dirs->next != NULL) {
+            mx_printchar('\n');
+        }
+        dirs = dirs->next;
     }
 
     return ret;

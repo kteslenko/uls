@@ -73,7 +73,8 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
         fileinfo->group = get_group_name(fileinfo->stat.st_gid, config->display_numeric);
         if (S_ISLNK(fileinfo->stat.st_mode)) {
             fileinfo->link = malloc(PATH_MAX);
-            readlink(fileinfo->path, fileinfo->link, PATH_MAX);
+            ssize_t size = readlink(fileinfo->path, fileinfo->link, PATH_MAX);
+            fileinfo->link[size] = '\0';
         } else {
             fileinfo->link = NULL;
             fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
