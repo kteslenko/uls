@@ -49,6 +49,12 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     t_fileinfo *fileinfo = malloc(sizeof(t_fileinfo));
 
     fileinfo->path = mx_strjoin_delim(dir, name, '/');
+    fileinfo->name = mx_strdup(name);
+    fileinfo->user = NULL;
+    fileinfo->link = NULL;
+    fileinfo->group = NULL;
+    fileinfo->xattr_keys = NULL;
+    fileinfo->acl = NULL;
 
     int err;
     if (dir == NULL && config->follow_links) {
@@ -58,21 +64,22 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     }
 
     if (err != 0) {
-        free(fileinfo);
+        free_fileinfo(fileinfo);
         return NULL;
     }
 
-    fileinfo->name = mx_strdup(name);
-    fileinfo->user = get_user_name(fileinfo->stat.st_uid, config->display_numeric);
-    fileinfo->group = get_group_name(fileinfo->stat.st_gid, config->display_numeric);
-    if (S_ISLNK(fileinfo->stat.st_mode)) {
-        fileinfo->link = malloc(PATH_MAX);
-        readlink(fileinfo->path, fileinfo->link, PATH_MAX);
-    } else {
-        fileinfo->link = NULL;
-        fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
+    if (config->format == FORMAT_LONG) {
+        fileinfo->user = get_user_name(fileinfo->stat.st_uid, config->display_numeric);
+        fileinfo->group = get_group_name(fileinfo->stat.st_gid, config->display_numeric);
+        if (S_ISLNK(fileinfo->stat.st_mode)) {
+            fileinfo->link = malloc(PATH_MAX);
+            readlink(fileinfo->path, fileinfo->link, PATH_MAX);
+        } else {
+            fileinfo->link = NULL;
+            fileinfo->acl = acl_get_file(fileinfo->path, ACL_TYPE_EXTENDED);
+        }
+        fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
     }
-    fileinfo->xattr_keys = get_xattr_keys(fileinfo->path);
     fileinfo->timespec = get_timespec(&fileinfo->stat, config->time_type);
 
     return fileinfo;
@@ -104,6 +111,17 @@ bool get_dir_entries(t_list **entries, const char *name, t_config *config) {
 
     closedir(dir);
     return true;
+}
+
+void free_fileinfo(t_fileinfo *fileinfo) {
+    free(fileinfo->path);
+    free(fileinfo->name);
+    mx_strdel(&fileinfo->user);
+    mx_strdel(&fileinfo->link);
+    mx_strdel(&fileinfo->group);
+    mx_del_strarr(&fileinfo->xattr_keys);
+    acl_free(fileinfo->acl);
+    free(fileinfo);
 }
 
 blkcnt_t count_blocks(t_list *files) {

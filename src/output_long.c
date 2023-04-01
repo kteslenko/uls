@@ -28,26 +28,26 @@ static void print_filetype(mode_t mode) {
 
 static void print_permissions(mode_t mode) {
     print_filetype(mode);
-    mx_printstr((mode & S_IRUSR) ? "r" : "-");
-    mx_printstr((mode & S_IWUSR) ? "w" : "-");
+    mx_printchar((mode & S_IRUSR) ? 'r' : '-');
+    mx_printchar((mode & S_IWUSR) ? 'w' : '-');
     if (mode & S_IXUSR) {
-        mx_printstr((mode & S_ISUID) ? "s" : "x");
+        mx_printchar((mode & S_ISUID) ? 's' : 'x');
     } else {
-        mx_printstr((mode & S_ISUID) ? "S" : "-");
+        mx_printchar((mode & S_ISUID) ? 'S' : '-');
     }
-    mx_printstr((mode & S_IRGRP) ? "r" : "-");
-    mx_printstr((mode & S_IWGRP) ? "w" : "-");
+    mx_printchar((mode & S_IRGRP) ? 'r' : '-');
+    mx_printchar((mode & S_IWGRP) ? 'w' : '-');
     if (mode & S_IXGRP) {
-        mx_printstr((mode & S_ISGID) ? "s" : "x");
+        mx_printchar((mode & S_ISGID) ? 's' : 'x');
     } else {
-        mx_printstr((mode & S_ISGID) ? "S" : "-");
+        mx_printchar((mode & S_ISGID) ? 'S' : '-');
     }
-    mx_printstr((mode & S_IROTH) ? "r" : "-");
-    mx_printstr((mode & S_IWOTH) ? "w" : "-");
+    mx_printchar((mode & S_IROTH) ? 'r' : '-');
+    mx_printchar((mode & S_IWOTH) ? 'w' : '-');
     if (mode & S_IXOTH) {
-        mx_printstr((mode & S_ISTXT) ? "t" : "x");
+        mx_printchar((mode & S_ISTXT) ? 't' : 'x');
     } else {
-        mx_printstr((mode & S_ISTXT) ? "T" : "-");
+        mx_printchar((mode & S_ISTXT) ? 'T' : '-');
     }
 }
 
@@ -87,20 +87,22 @@ static void print_time(time_t ptime, bool full) {
         }
     } else if (ptime + six_months_sec <= now || ptime >= now + six_months_sec) {
         mx_printstr(arr[1]);
-        mx_printstr(" ");
+        mx_printchar(' ');
         print_aligned(arr[2], 2, true);
         mx_printstr("  ");
         mx_printstr(arr[4]);
     } else {
         mx_printstr(arr[1]);
-        mx_printstr(" ");
+        mx_printchar(' ');
         print_aligned(arr[2], 2, true);
-        mx_printstr(" ");
+        mx_printchar(' ');
         char **arr_time = mx_strsplit(arr[3], ':');
         mx_printstr(arr_time[0]);
         mx_printchar(':');
         mx_printstr(arr_time[1]);
+        mx_del_strarr(&arr_time);
     }
+    mx_del_strarr(&arr);
 }
 
 static double round(double number) {
@@ -117,19 +119,18 @@ static void print_size(off_t size, int width) {
         suffix++;
     }
 
-    size_f = round(size_f * 10) / 10;
-
+    double size_r = round(size_f * 10) / 10;
     char buf[5] = {'\0'};
-    if (size_f >= 10 || suffix == 0) {
+    if (size_r >= 10 || suffix == 0) {
         char *str = mx_itoa(round(size_f));
         mx_strcat(buf, str);
         free(str);
     } else {
-        char *str = mx_itoa(size_f);
+        char *str = mx_itoa(size_r);
         mx_strcat(buf, str);
         free(str);
         mx_strcat(buf, ".");
-        str = mx_itoa((int)(size_f * 10) % 10);
+        str = mx_itoa((int)(size_r * 10) % 10);
         mx_strcat(buf, str);
         free(str);
     }
@@ -139,9 +140,9 @@ static void print_size(off_t size, int width) {
 
 static void print_xattrs(t_fileinfo *fileinfo, bool human_readable) {
     for (char **ptr = fileinfo->xattr_keys; *ptr != NULL; ptr++) {
-        mx_printstr("\t");
+        mx_printchar('\t');
         mx_printstr(*ptr);
-        mx_printstr("\t");
+        mx_printchar('\t');
         ssize_t value_size = getxattr(fileinfo->path, *ptr, NULL, 0, 0, XATTR_NOFOLLOW);
         if (human_readable) {
             print_size(value_size, 5);
@@ -157,18 +158,18 @@ static void print_acl(acl_t acl) {
     char **lines = mx_strsplit(str, '\n');
 
     for (int i = 1; lines[i] != NULL; i++) {
-        mx_printstr(" ");
+        mx_printchar(' ');
         mx_printint(i - 1);
         mx_printstr(": ");
         char **parts = mx_strsplit(lines[i], ':');
         mx_printstr(parts[0]);
-        mx_printstr(":");
+        mx_printchar(':');
         mx_printstr(parts[2]);
-        mx_printstr(" ");
+        mx_printchar(' ');
         mx_printstr(parts[4]);
-        mx_printstr(" ");
+        mx_printchar(' ');
         mx_printstr(parts[5]);
-        mx_printstr("\n");
+        mx_printchar('\n');
         mx_del_strarr(&parts);
     }
     mx_del_strarr(&lines);
@@ -186,9 +187,9 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
         mx_printchar(' ');
     }
 
-    mx_printstr(" ");
+    mx_printchar(' ');
     printint_aligned(fileinfo->stat.st_nlink, width->links);
-    mx_printstr(" ");
+    mx_printchar(' ');
 
     if (!config->omit_owner) {
         print_aligned(fileinfo->user, width->user, false);
@@ -220,15 +221,15 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
         printint_aligned(fileinfo->stat.st_size, width->size);
     }
 
-    mx_printstr(" ");
+    mx_printchar(' ');
     print_time(fileinfo->timespec.tv_sec, config->complete_time_info);
-    mx_printstr(" ");
+    mx_printchar(' ');
     print_fileinfo(fileinfo, config);
     if (fileinfo->link != NULL) {
         mx_printstr(" -> ");
         mx_printstr(fileinfo->link);
     }
-    mx_printstr("\n");
+    mx_printchar('\n');
 
     if (config->extended_attributes && fileinfo->xattr_keys != NULL) {
         print_xattrs(fileinfo, config->human_readable);

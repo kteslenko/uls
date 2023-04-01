@@ -117,6 +117,8 @@ t_config *parse_args(int argc, char *argv[]) {
 
     if (!isatty(1)) {
         config->colorize = false;
+    } else {
+        config->non_printable = true;
     }
     if (!config->follow_links) {
         config->follow_links =
