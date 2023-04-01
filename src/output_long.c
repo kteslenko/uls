@@ -65,8 +65,8 @@ static void print_aligned(char *string, int width, bool align_right) {
     }
 }
 
-static void printint_aligned(int number, int width) {
-    char *str = mx_itoa(number);
+static void printlong_aligned(long long number, int width) {
+    char *str = mx_ltoa(number);
     print_aligned(str, width, true);
     free(str);
 }
@@ -122,15 +122,15 @@ static void print_size(off_t size, int width) {
     double size_r = round(size_f * 10) / 10;
     char buf[5] = {'\0'};
     if (size_r >= 10 || suffix == 0) {
-        char *str = mx_itoa(round(size_f));
+        char *str = mx_ltoa(round(size_f));
         mx_strcat(buf, str);
         free(str);
     } else {
-        char *str = mx_itoa(size_r);
+        char *str = mx_ltoa(size_r);
         mx_strcat(buf, str);
         free(str);
         mx_strcat(buf, ".");
-        str = mx_itoa((int)(size_r * 10) % 10);
+        str = mx_ltoa((long long)(size_r * 10) % 10);
         mx_strcat(buf, str);
         free(str);
     }
@@ -147,7 +147,7 @@ static void print_xattrs(t_fileinfo *fileinfo, bool human_readable) {
         if (human_readable) {
             print_size(value_size, 5);
         } else {
-            printint_aligned(value_size, 4);
+            printlong_aligned(value_size, 4);
         }
         mx_printstr(" \n");
     }
@@ -188,7 +188,7 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     }
 
     mx_printchar(' ');
-    printint_aligned(fileinfo->stat.st_nlink, width->links);
+    printlong_aligned(fileinfo->stat.st_nlink, width->links);
     mx_printchar(' ');
 
     if (!config->omit_owner) {
@@ -218,7 +218,7 @@ static void print_fileinfo_long(t_fileinfo *fileinfo, t_width *width, t_config *
     } else if (config->human_readable) {
         print_size(fileinfo->stat.st_size, width->size);
     } else {
-        printint_aligned(fileinfo->stat.st_size, width->size);
+        printlong_aligned(fileinfo->stat.st_size, width->size);
     }
 
     mx_printchar(' ');
@@ -246,7 +246,7 @@ static t_width max_width(t_list *fileinfos, t_config *config) {
     while (fileinfos != NULL) {
         t_fileinfo *fileinfo = fileinfos->data;
 
-        char *nlinks = mx_itoa(fileinfo->stat.st_nlink);
+        char *nlinks = mx_ltoa(fileinfo->stat.st_nlink);
         if (width.links < mx_strlen(nlinks)) {
             width.links = mx_strlen(nlinks);
         }
@@ -266,7 +266,7 @@ static t_width max_width(t_list *fileinfos, t_config *config) {
             size_len = mx_strlen(wsize) + 2;
             free(wsize);
         } else if (!config->human_readable) {
-            char *wsize = mx_itoa(fileinfo->stat.st_size);
+            char *wsize = mx_ltoa(fileinfo->stat.st_size);
             size_len = mx_strlen(wsize);
             free(wsize);
         }

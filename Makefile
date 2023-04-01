@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinc -Ilibmx/inc
+CFLAGS = -O2 -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinc -Ilibmx/inc
 SOURCES = $(wildcard src/*.c)
 OBJECTS = $(SOURCES:src/%.c=obj/%.o)
 LIB = libmx/libmx.a

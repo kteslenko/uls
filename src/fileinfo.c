@@ -3,7 +3,7 @@
 static char *get_user_name(uid_t uid, bool numeric) {
     struct passwd *passwd = getpwuid(uid);
     if (passwd == NULL || numeric) {
-        return mx_itoa(uid);
+        return mx_ltoa(uid);
     }
     return mx_strdup(passwd->pw_name);
 }
@@ -11,7 +11,7 @@ static char *get_user_name(uid_t uid, bool numeric) {
 static char *get_group_name(gid_t gid, bool numeric) {
     struct group *group = getgrgid(gid);
     if (group == NULL || numeric) {
-        return mx_itoa(gid);
+        return mx_ltoa(gid);
     }
     return mx_strdup(group->gr_name);
 }

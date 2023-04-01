@@ -91,12 +91,14 @@ static bool list_dir(t_fileinfo *fileinfo, t_config *config, bool print_name) {
         if (dirs != NULL) {
             mx_printchar('\n');
         }
-        list_dirs(dirs, config, true);
+        if (!list_dirs(dirs, config, true)) {
+            status = false;
+        }
         mx_clear_list(&dirs);
     }
 
     free_fileinfos(fileinfos);
-    return true;
+    return status;
 }
 
 static bool list_dirs(t_list *dirs, t_config *config, bool print_names) {
