@@ -80,7 +80,7 @@ static bool list_dir(t_fileinfo *fileinfo, t_config *config, bool print_name) {
         while (fileinfos != NULL) {
             t_fileinfo *entry = fileinfos->data;
 
-            if (S_ISDIR(entry->stat.st_mode)) {
+            if (S_ISDIR(entry->stat.st_mode) && !is_ignored(entry->name, IGNORE_DOTS)) {
                 free(entry->name);
                 entry->name = mx_strdup(entry->path);
                 mx_push_back(&dirs, entry);

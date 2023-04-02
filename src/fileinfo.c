@@ -86,7 +86,7 @@ t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config) {
     return fileinfo;
 }
 
-static bool is_ignored(const char *name, t_ignore_type ignore_type) {
+bool is_ignored(const char *name, t_ignore_type ignore_type) {
     if (ignore_type == IGNORE_HIDDEN && name[0] == '.') {
         return true;
     }

@@ -27,6 +27,7 @@ typedef struct {
 
 t_fileinfo *get_fileinfo(const char *dir, const char *name, t_config *config);
 bool get_dir_entries(t_list **entries, const char *name, t_config *config);
+bool is_ignored(const char *name, t_ignore_type ignore_type);
 
 void free_fileinfo(t_fileinfo *fileinfo);
 
