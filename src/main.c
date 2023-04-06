@@ -60,7 +60,7 @@ static bool list_dir(t_fileinfo *fileinfo, t_config *config, bool print_name) {
     t_list *fileinfos = NULL;
     bool status = get_dir_entries(&fileinfos, fileinfo->path, config);
 
-    if (config->format == FORMAT_LONG) {
+    if (config->format == FORMAT_LONG && fileinfos != NULL) {
         mx_printstr("total ");
         mx_printint(count_blocks(fileinfos));
         mx_printchar('\n');
